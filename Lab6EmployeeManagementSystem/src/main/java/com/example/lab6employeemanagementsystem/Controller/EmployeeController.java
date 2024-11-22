@@ -52,20 +52,14 @@ public class EmployeeController {
     }
 
     @GetMapping("/position/{position}")
-    //??????????
     public ResponseEntity getEmployeeByPosition(@PathVariable String position) {
         ArrayList<Employee> samePositionEmployees = new ArrayList<>();
+        if (!(position.equalsIgnoreCase("supervisor") || position.equalsIgnoreCase("coordinator")))
+            return ResponseEntity.status(400).body(new ApiResponse("Enter A Valid Position. Either 'Supervisor' or 'Coordinator'"));
 
-//       if (errors.hasErrors()) {
-//           String message = errors.getFieldError().getDefaultMessage();
-//           return ResponseEntity.status(400).body(message);
-//       }
         for (Employee employee : employees) {
-            if (employee.getPosition().equalsIgnoreCase(position)) {
+            if (employee.getPosition().equalsIgnoreCase(position))
                 samePositionEmployees.add(employee);
-            } else if (!employee.getPosition().equalsIgnoreCase(position)) {
-                return ResponseEntity.status(400).body(new ApiResponse("Enter Valid Position"));
-            }
         }
         return ResponseEntity.status(200).body(samePositionEmployees);
     }
@@ -74,7 +68,7 @@ public class EmployeeController {
     public ResponseEntity sameAgeRange(@PathVariable int minAge, @PathVariable int maxAge) {
         ArrayList<Employee> sameAgeEmployees = new ArrayList<>();
         for (Employee employee : employees) {
-            if (employee.getAge() > minAge && employee.getAge() < maxAge) {
+            if (employee.getAge() >= minAge && employee.getAge() <= maxAge) {
                 sameAgeEmployees.add(employee);
             }
         }
@@ -108,19 +102,24 @@ public class EmployeeController {
         return ResponseEntity.status(200).body(noAnnualLeaveEmployeesList);
     }
 
-    @PutMapping("/promote/{position}/{id}")
-    public ResponseEntity promoteEmployee(@PathVariable String position, @PathVariable String id) {
-        if (position.equalsIgnoreCase("supervisor")) {
-            for (Employee employee : employees) {
-                if (employee.getId().equals(id) && employee.getAge() >= 30 && !employee.isOnLeave()) {
-                    employee.setPosition("supervisor");
-                    return ResponseEntity.status(200).body(new ApiResponse("Employee Promoted Successfully"));
-                }
-                //else
+    @PutMapping("/promote/{supervisorID}/{employeeID}")
+    public ResponseEntity promoteEmployee(@PathVariable String supervisorID, @PathVariable String employeeID) {
+        boolean isSupervisor = false;
+        for (Employee employee : employees) {
+            if (employee.getId().equals(supervisorID)) {
+                if (employee.getPosition().equalsIgnoreCase("supervisor"))
+                    isSupervisor = true;
             }
-            return ResponseEntity.status(400).body(new ApiResponse("Employee Cant Be Promoted"));
         }
-        return ResponseEntity.status(400).body(new ApiResponse("Only Supervisor Can Promote Employee"));
+        if (isSupervisor) {
+            for (Employee employee : employees) {
+                if (employee.getId().equals(employeeID) && employee.getAge() >= 30 && !employee.isOnLeave()) {
+                    employee.setPosition("Supervisor");
+                    return ResponseEntity.status(200).body(new ApiResponse("Employee Promoted Successfully"));
+                } //else return ResponseEntity.status(200).body(new ApiResponse("Employee Cant Be Promoted"));
+            }
+        }
+        return ResponseEntity.status(400).body(new ApiResponse("Only Supervisors Can Promote"));
     }
 
 }
